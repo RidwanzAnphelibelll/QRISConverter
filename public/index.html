@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Konversi QRIS statis menjadi QRIS dinamis dengan nominal custom.">
   <title>QRIS Converter</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c6af7'/><rect x='6' y='6' width='8' height='8' rx='1' fill='white'/><rect x='18' y='6' width='8' height='8' rx='1' fill='white'/><rect x='6' y='18' width='8' height='8' rx='1' fill='white'/><rect x='18' y='18' width='4' height='4' rx='0.5' fill='white'/><rect x='24' y='18' width='2' height='2' fill='white'/><rect x='22' y='22' width='4' height='4' rx='0.5' fill='white'/><rect x='18' y='24' width='2' height='2' fill='white'/></svg>" type="image/svg+xml">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg: #0a0a0f;
       --surface: #111118;
@@ -21,9 +21,7 @@
       --success: #4ade80;
       --danger: #f87171;
     }
-
     html, body { height: 100%; }
-
     body {
       font-family: 'Syne', sans-serif;
       background: var(--bg);
@@ -35,7 +33,6 @@
       justify-content: center;
       padding: 16px;
     }
-
     body::before {
       content: '';
       position: fixed;
@@ -46,7 +43,6 @@
       pointer-events: none;
       z-index: 0;
     }
-
     .wrap {
       position: relative;
       z-index: 1;
@@ -56,9 +52,7 @@
       flex-direction: column;
       align-items: center;
     }
-
     .logo { text-align: center; margin-bottom: 20px; }
-
     .logo-text {
       font-size: 12px;
       font-weight: 700;
@@ -66,9 +60,7 @@
       text-transform: uppercase;
       color: var(--muted);
     }
-
     .logo-text span { color: var(--accent); }
-
     .card {
       width: 100%;
       background: var(--surface);
@@ -76,7 +68,6 @@
       border-radius: 20px;
       overflow: hidden;
     }
-
     .card-header {
       padding: 20px 20px 16px;
       border-bottom: 1px solid var(--border);
@@ -84,9 +75,7 @@
       align-items: center;
       justify-content: space-between;
     }
-
     .card-title { font-size: 15px; font-weight: 700; }
-
     .badge {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -96,14 +85,35 @@
       color: var(--accent);
       border: 1px solid rgba(124,106,247,0.3);
     }
-
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 8px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
     .card-body { padding: 20px; }
-
     .screen { display: none; }
     .screen.active { display: block; }
-
     .form-group { margin-bottom: 14px; }
-
     label {
       display: block;
       font-size: 11px;
@@ -113,7 +123,6 @@
       color: var(--muted);
       margin-bottom: 7px;
     }
-
     textarea {
       width: 100%;
       background: var(--surface2);
@@ -128,10 +137,8 @@
       resize: vertical;
       min-height: 90px;
     }
-
     textarea:focus { border-color: var(--accent); }
     textarea::placeholder { color: var(--muted); }
-
     input[type="number"] {
       width: 100%;
       background: var(--surface2);
@@ -145,10 +152,60 @@
       transition: border-color 0.2s;
       -webkit-appearance: none;
     }
-
     input[type="number"]:focus { border-color: var(--accent); }
     input[type="number"]::placeholder { color: var(--muted); }
-
+    .upload-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface2);
+      position: relative;
+    }
+    .upload-label:hover { border-color: var(--accent); background: rgba(124,106,247,0.07); }
+    .upload-label.has-file { border-color: var(--accent2); }
+    #scan-file-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .drop-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(124,106,247,0.12);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--accent);
+    }
+    .upload-label p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .upload-label small {
+      font-size: 11px;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+    .file-chosen {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      word-break: break-all;
+    }
     .btn {
       width: 100%;
       padding: 13px;
@@ -166,16 +223,13 @@
       justify-content: center;
       gap: 8px;
     }
-
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: #6a59e8; }
     .btn-primary:active { transform: scale(0.98); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
     .btn-success { background: var(--success); color: #0a0a0f; }
     .btn-success:hover { background: #36c96a; }
     .btn-success:active { transform: scale(0.98); }
-
     .btn-ghost {
       background: transparent;
       color: var(--muted);
@@ -183,17 +237,14 @@
       margin-top: 10px;
       font-size: 12px;
     }
-
     .btn-ghost:hover { border-color: var(--accent2); color: var(--accent2); }
     .btn-ghost:active { transform: scale(0.98); }
-
     .qr-section {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 14px;
     }
-
     .qr-frame {
       position: relative;
       padding: 10px;
@@ -201,14 +252,12 @@
       border-radius: 14px;
       box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,0.4);
     }
-
     .qr-frame img {
       display: block;
       width: min(200px, 55vw);
       height: min(200px, 55vw);
       border-radius: 6px;
     }
-
     .amount-box {
       width: 100%;
       background: var(--surface2);
@@ -217,7 +266,6 @@
       padding: 14px 18px;
       text-align: center;
     }
-
     .amount-label {
       font-size: 10px;
       font-weight: 600;
@@ -226,7 +274,6 @@
       color: var(--muted);
       margin-bottom: 5px;
     }
-
     .amount-value {
       font-family: 'DM Mono', monospace;
       font-size: clamp(18px, 5vw, 24px);
@@ -234,7 +281,6 @@
       color: var(--accent2);
       letter-spacing: -0.02em;
     }
-
     .result-string-box {
       width: 100%;
       background: var(--surface2);
@@ -242,7 +288,6 @@
       border-radius: 12px;
       padding: 12px 14px;
     }
-
     .result-string-label {
       font-size: 10px;
       font-weight: 600;
@@ -251,7 +296,6 @@
       color: var(--muted);
       margin-bottom: 6px;
     }
-
     .result-string-val {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
@@ -259,15 +303,12 @@
       word-break: break-all;
       line-height: 1.6;
     }
-
     .btn-row {
       width: 100%;
       display: flex;
       gap: 8px;
     }
-
     .btn-row .btn { flex: 1; font-size: 12px; padding: 11px 8px; }
-
     .btn-copy {
       width: 100%;
       padding: 10px;
@@ -285,11 +326,9 @@
       justify-content: center;
       gap: 6px;
     }
-
     .btn-copy:hover { border-color: var(--accent2); color: var(--accent2); }
     .btn-copy.copied { border-color: var(--success); color: var(--success); }
     .btn-copy:active { transform: scale(0.98); }
-
     .error-msg {
       font-size: 12px;
       color: var(--danger);
@@ -300,7 +339,28 @@
       border: 1px solid rgba(248,113,113,0.2);
       border-radius: 8px;
     }
-
+    .decode-result-box {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .decode-result-box.show { display: flex; }
+    .decode-preview { display: flex; justify-content: center; }
+    .decode-preview img {
+      max-width: 140px;
+      max-height: 140px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      object-fit: contain;
+      background: #fff;
+      padding: 4px;
+    }
     footer {
       position: relative;
       z-index: 1;
@@ -311,10 +371,8 @@
       font-size: 11px;
       letter-spacing: 0.04em;
     }
-
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { color: var(--accent2); }
-
     @media (max-width: 380px) {
       .card-body { padding: 14px; }
       .qr-section { gap: 12px; }
@@ -331,8 +389,14 @@
     <div class="card">
       <div class="card-header">
         <div class="card-title" id="card-title">Konversi QRIS</div>
-        <div class="badge">STATIS → DINAMIS</div>
+        <div class="badge" id="header-badge">STATIS → DINAMIS</div>
       </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-convert" onclick="switchTab('convert')">Konversi</button>
+        <button class="tab-btn" id="tab-scan" onclick="switchTab('scan')">Scan QR</button>
+      </div>
+
       <div class="card-body">
 
         <div class="screen active" id="screen-form">
@@ -378,6 +442,44 @@
           </div>
         </div>
 
+        <div class="screen" id="screen-scan">
+          <div class="form-group">
+            <label>Upload Gambar QRIS</label>
+            <label class="upload-label" id="upload-label">
+              <input type="file" id="scan-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+              <div class="drop-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              <p>Klik untuk memilih gambar</p>
+              <small>Mendukung JPG, JPEG, PNG, WEBP</small>
+              <div class="file-chosen" id="scan-file-chosen"></div>
+            </label>
+            <div class="error-msg" id="scan-error"></div>
+          </div>
+
+          <button class="btn btn-primary" id="btn-scan" onclick="scanQris()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+            Scan & Decode
+          </button>
+
+          <div class="decode-result-box" id="decode-result-box">
+            <div class="decode-preview">
+              <img id="decode-preview-img" src="" alt="Preview" />
+            </div>
+            <div class="result-string-box" style="margin:0">
+              <div class="result-string-label">QRIS String Hasil Scan</div>
+              <div class="result-string-val" id="decode-qris-string">-</div>
+            </div>
+            <button class="btn-copy" id="btn-copy-decode" onclick="copyDecoded()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Salin String
+            </button>
+            <button class="btn btn-ghost" style="margin-top:4px" onclick="pasteToConvert()">
+              Pakai untuk Konversi →
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -389,24 +491,42 @@
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
+    let currentQrisString = '';
+    let currentAmount = 0;
+    let decodedQrisString = '';
+
     function fmt(n) {
       return 'Rp ' + parseInt(n).toLocaleString('id-ID');
     }
 
     function qrisImageUrl(str) {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(str)}`;
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encodeURIComponent(str);
     }
 
     function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
       document.getElementById('screen-' + id).classList.add('active');
     }
 
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'convert') {
+        document.getElementById('header-badge').textContent = 'STATIS → DINAMIS';
+        showScreen('form');
+        document.getElementById('card-title').textContent = 'Konversi QRIS';
+      } else {
+        document.getElementById('header-badge').textContent = 'GAMBAR → STRING';
+        showScreen('scan');
+        document.getElementById('card-title').textContent = 'Scan QRIS';
+      }
+    }
+
     function crc16(data) {
-      let crc = 0xFFFF;
-      for (let i = 0; i < data.length; i++) {
+      var crc = 0xFFFF;
+      for (var i = 0; i < data.length; i++) {
         crc ^= data.charCodeAt(i) << 8;
-        for (let j = 0; j < 8; j++) {
+        for (var j = 0; j < 8; j++) {
           if (crc & 0x8000) {
             crc = (crc << 1) ^ 0x1021;
           } else {
@@ -419,37 +539,32 @@
     }
 
     function buildQrisDynamic(qrisStatic, amount) {
-      const base = qrisStatic.trim().toUpperCase();
+      var base = qrisStatic.trim().toUpperCase();
       if (!base.startsWith('000201')) throw new Error('Format QRIS tidak dikenali!');
-      const amountNum = parseInt(String(amount).trim(), 10);
+      var amountNum = parseInt(String(amount).trim(), 10);
       if (isNaN(amountNum) || amountNum < 1) throw new Error('Amount minimal 1!');
-      const a = amountNum.toString();
-      const field = '54' + String(a.length).padStart(2, '0') + a;
-      const normalized = base.replace('010211', '010212');
-      const stripped = normalized.replace(/6304.{4}$/, '');
-      const parts = stripped.split('5802ID');
+      var a = amountNum.toString();
+      var field = '54' + String(a.length).padStart(2, '0') + a;
+      var normalized = base.replace('010211', '010212');
+      var stripped = normalized.replace(/6304.{4}$/, '');
+      var parts = stripped.split('5802ID');
       if (parts.length < 2) throw new Error('Format QRIS tidak valid: tidak ditemukan field 5802ID.');
-      const raw = parts[0] + field + '5802ID' + parts[1] + '6304';
+      var raw = parts[0] + field + '5802ID' + parts[1] + '6304';
       return raw + crc16(raw);
     }
 
-    let currentQrisString = '';
-    let currentAmount = 0;
-
     function convertQris() {
-      const qrisInput = document.getElementById('qris-input').value.trim();
-      const amount = document.getElementById('amount').value;
-      const errEl = document.getElementById('form-error');
+      var qrisInput = document.getElementById('qris-input').value.trim();
+      var amount = document.getElementById('amount').value;
+      var errEl = document.getElementById('form-error');
       errEl.style.display = 'none';
-
       if (!qrisInput || !amount || parseInt(amount) < 1) {
         errEl.textContent = 'Isi semua field dengan benar.';
         errEl.style.display = 'block';
         return;
       }
-
       try {
-        const result = buildQrisDynamic(qrisInput, amount);
+        var result = buildQrisDynamic(qrisInput, amount);
         currentQrisString = result;
         currentAmount = amount;
         document.getElementById('display-amount').textContent = fmt(amount);
@@ -464,31 +579,31 @@
     }
 
     async function copyQris() {
-      const btn = document.getElementById('btn-copy');
+      var btn = document.getElementById('btn-copy');
       try {
         await navigator.clipboard.writeText(currentQrisString);
         btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
         btn.classList.add('copied');
-        setTimeout(() => {
+        setTimeout(function() {
           btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
           btn.classList.remove('copied');
         }, 2000);
-      } catch {
+      } catch(e) {
         btn.textContent = 'Gagal menyalin.';
       }
     }
 
     async function downloadQris() {
-      const url = qrisImageUrl(currentQrisString);
+      var url = qrisImageUrl(currentQrisString);
       try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const a = document.createElement('a');
+        var res = await fetch(url);
+        var blob = await res.blob();
+        var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `qris-${currentAmount}.png`;
+        a.download = 'qris-' + currentAmount + '.jpg';
         a.click();
         URL.revokeObjectURL(a.href);
-      } catch {
+      } catch(e) {
         window.open(url, '_blank');
       }
     }
@@ -504,6 +619,116 @@
       currentAmount = 0;
       document.getElementById('card-title').textContent = 'Konversi QRIS';
       showScreen('form');
+    }
+
+    var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    var ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
+
+    function isAllowedFile(file) {
+      if (!file) return false;
+      var ext = '.' + file.name.split('.').pop().toLowerCase();
+      return ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
+    }
+
+    document.getElementById('scan-file-input').addEventListener('change', function() {
+      var file = this.files[0];
+      var label = document.getElementById('upload-label');
+      if (file && !isAllowedFile(file)) {
+        showScanError('Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.');
+        this.value = '';
+        document.getElementById('scan-file-chosen').textContent = '';
+        label.classList.remove('has-file');
+        return;
+      }
+      document.getElementById('scan-file-chosen').textContent = file ? file.name : '';
+      document.getElementById('scan-error').style.display = 'none';
+      if (file) {
+        label.classList.add('has-file');
+      } else {
+        label.classList.remove('has-file');
+      }
+    });
+
+    function showScanError(msg) {
+      var el = document.getElementById('scan-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    async function scanQris() {
+      var fileInput = document.getElementById('scan-file-input');
+      var file = fileInput.files[0];
+      document.getElementById('scan-error').style.display = 'none';
+      document.getElementById('decode-result-box').classList.remove('show');
+
+      if (!file) {
+        showScanError('Pilih gambar QRIS terlebih dahulu!');
+        return;
+      }
+
+      if (!isAllowedFile(file)) {
+        showScanError('Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.');
+        return;
+      }
+
+      var btn = document.getElementById('btn-scan');
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Memproses...';
+
+      try {
+        var formData = new FormData();
+        formData.append('MAX_FILE_SIZE', '1048576');
+        formData.append('file', file);
+
+        var res = await fetch('https://api.qrserver.com/v1/read-qr-code/', {
+          method: 'POST',
+          body: formData
+        });
+
+        var json = await res.json();
+        var symbol = json[0].symbol[0];
+
+        if (symbol.error) {
+          throw new Error('QR Code tidak terdeteksi. Pastikan gambar jelas dan berisi QRIS yang valid');
+        }
+
+        decodedQrisString = symbol.data;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('decode-preview-img').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        document.getElementById('decode-qris-string').textContent = decodedQrisString;
+        document.getElementById('decode-result-box').classList.add('show');
+
+      } catch (err) {
+        showScanError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg> Scan & Decode';
+      }
+    }
+
+    async function copyDecoded() {
+      var btn = document.getElementById('btn-copy-decode');
+      try {
+        await navigator.clipboard.writeText(decodedQrisString);
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
+        btn.classList.add('copied');
+        setTimeout(function() {
+          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch(e) {
+        btn.textContent = 'Gagal menyalin.';
+      }
+    }
+
+    function pasteToConvert() {
+      document.getElementById('qris-input').value = decodedQrisString;
+      switchTab('convert');
     }
 
     document.getElementById('qris-input').addEventListener('keydown', function(e) {
