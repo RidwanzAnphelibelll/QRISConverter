@@ -1,6 +1,6 @@
 {
-  "name": "Social",
-  "main": "QRISConverter",
+  "name": "QRISConverter",
+  "main": "_worker.js",
   
   "scripts": {
     "deploy": "wrangler deploy",
