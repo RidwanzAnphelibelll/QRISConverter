@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Konversi QRIS statis menjadi QRIS dinamis dengan nominal custom.">
+  <title>QRIS Converter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #7c6af7;
+      --accent2: #5eead4;
+      --text: #f0f0f8;
+      --muted: #6b6b88;
+      --success: #4ade80;
+      --danger: #f87171;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(124,106,247,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(94,234,212,0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .logo { text-align: center; margin-bottom: 20px; }
+
+    .logo-text {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    .card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title { font-size: 15px; font-weight: 700; }
+
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: rgba(124,106,247,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(124,106,247,0.3);
+    }
+
+    .card-body { padding: 20px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .form-group { margin-bottom: 14px; }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input[type="number"]:focus { border-color: var(--accent); }
+    input[type="number"]::placeholder { color: var(--muted); }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6a59e8; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-success { background: var(--success); color: #0a0a0f; }
+    .btn-success:hover { background: #36c96a; }
+    .btn-success:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .btn-ghost:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-ghost:active { transform: scale(0.98); }
+
+    .qr-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .qr-frame {
+      position: relative;
+      padding: 10px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 0 0 1px var(--border), 0 16px 48px rgba(0,0,0,0.4);
+    }
+
+    .qr-frame img {
+      display: block;
+      width: min(200px, 55vw);
+      height: min(200px, 55vw);
+      border-radius: 6px;
+    }
+
+    .amount-box {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+    }
+
+    .amount-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .amount-value {
+      font-family: 'DM Mono', monospace;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: 500;
+      color: var(--accent2);
+      letter-spacing: -0.02em;
+    }
+
+    .result-string-box {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .result-string-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .result-string-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .btn-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-row .btn { flex: 1; font-size: 12px; padding: 11px 8px; }
+
+    .btn-copy {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-copy:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-copy.copied { border-color: var(--success); color: var(--success); }
+    .btn-copy:active { transform: scale(0.98); }
+
+    .error-msg {
+      font-size: 12px;
+      color: var(--danger);
+      margin-top: 7px;
+      display: none;
+      padding: 8px 12px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 8px;
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { color: var(--accent2); }
+
+    @media (max-width: 380px) {
+      .card-body { padding: 14px; }
+      .qr-section { gap: 12px; }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">
+      <div class="logo-text">QRIS <span>CONVERTER</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" id="card-title">Konversi QRIS</div>
+        <div class="badge">STATIS → DINAMIS</div>
+      </div>
+      <div class="card-body">
+
+        <div class="screen active" id="screen-form">
+          <div class="form-group">
+            <label>QRIS String Statis</label>
+            <textarea id="qris-input" placeholder="Paste string QRIS statis di sini..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Nominal (Rp)</label>
+            <input type="number" id="amount" placeholder="Minimal 1" min="1" />
+            <div class="error-msg" id="form-error">Isi semua field dengan benar.</div>
+          </div>
+          <button class="btn btn-primary" id="btn-convert" onclick="convertQris()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Konversi & Tampilkan
+          </button>
+        </div>
+
+        <div class="screen" id="screen-result">
+          <div class="qr-section">
+            <div class="qr-frame">
+              <img id="qr-img" src="" alt="QR Code" />
+            </div>
+            <div class="amount-box">
+              <div class="amount-label">Nominal</div>
+              <div class="amount-value" id="display-amount">Rp 0</div>
+            </div>
+            <div class="result-string-box">
+              <div class="result-string-label">QRIS Dinamis</div>
+              <div class="result-string-val" id="display-qris-string">-</div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-copy" id="btn-copy" onclick="copyQris()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin String
+              </button>
+              <button class="btn btn-success" id="btn-download" onclick="downloadQris()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Unduh QR
+              </button>
+            </div>
+            <button class="btn btn-ghost" onclick="resetForm()">← Konversi Lagi</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      <p>Powered by <a href="https://github.com/Ridwanzanphelibelll/QRISConverter" target="_blank">RSCoders</a> &copy; <span id="yr"></span></p>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    function fmt(n) {
+      return 'Rp ' + parseInt(n).toLocaleString('id-ID');
+    }
+
+    function qrisImageUrl(str) {
+      return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(str)}`;
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + id).classList.add('active');
+    }
+
+    function crc16(data) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < data.length; i++) {
+        crc ^= data.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          if (crc & 0x8000) {
+            crc = (crc << 1) ^ 0x1021;
+          } else {
+            crc <<= 1;
+          }
+          crc &= 0xFFFF;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function buildQrisDynamic(qrisStatic, amount) {
+      const base = qrisStatic.trim().toUpperCase();
+      if (!base.startsWith('000201')) throw new Error('Format QRIS tidak dikenali!');
+      const amountNum = parseInt(String(amount).trim(), 10);
+      if (isNaN(amountNum) || amountNum < 1) throw new Error('Amount minimal 1!');
+      const a = amountNum.toString();
+      const field = '54' + String(a.length).padStart(2, '0') + a;
+      const normalized = base.replace('010211', '010212');
+      const stripped = normalized.replace(/6304.{4}$/, '');
+      const parts = stripped.split('5802ID');
+      if (parts.length < 2) throw new Error('Format QRIS tidak valid: tidak ditemukan field 5802ID.');
+      const raw = parts[0] + field + '5802ID' + parts[1] + '6304';
+      return raw + crc16(raw);
+    }
+
+    let currentQrisString = '';
+    let currentAmount = 0;
+
+    function convertQris() {
+      const qrisInput = document.getElementById('qris-input').value.trim();
+      const amount = document.getElementById('amount').value;
+      const errEl = document.getElementById('form-error');
+      errEl.style.display = 'none';
+
+      if (!qrisInput || !amount || parseInt(amount) < 1) {
+        errEl.textContent = 'Isi semua field dengan benar.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const result = buildQrisDynamic(qrisInput, amount);
+        currentQrisString = result;
+        currentAmount = amount;
+        document.getElementById('display-amount').textContent = fmt(amount);
+        document.getElementById('display-qris-string').textContent = result;
+        document.getElementById('qr-img').src = qrisImageUrl(result);
+        document.getElementById('card-title').textContent = 'Hasil Konversi';
+        showScreen('result');
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    async function copyQris() {
+      const btn = document.getElementById('btn-copy');
+      try {
+        await navigator.clipboard.writeText(currentQrisString);
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch {
+        btn.textContent = 'Gagal menyalin.';
+      }
+    }
+
+    async function downloadQris() {
+      const url = qrisImageUrl(currentQrisString);
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `qris-${currentAmount}.png`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch {
+        window.open(url, '_blank');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('qris-input').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('form-error').style.display = 'none';
+      document.getElementById('qr-img').src = '';
+      document.getElementById('btn-copy').classList.remove('copied');
+      document.getElementById('btn-copy').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
+      currentQrisString = '';
+      currentAmount = 0;
+      document.getElementById('card-title').textContent = 'Konversi QRIS';
+      showScreen('form');
+    }
+
+    document.getElementById('qris-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); convertQris(); }
+    });
+    
+  </script>
+</body>
+</html>
