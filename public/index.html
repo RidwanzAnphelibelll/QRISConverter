@@ -30,8 +30,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 16px;
+      justify-content: flex-start;
+      padding: 24px 16px;
     }
     body::before {
       content: '';
@@ -51,6 +51,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin: auto;
     }
     .logo { text-align: center; margin-bottom: 20px; }
     .logo-text {
@@ -407,7 +408,7 @@
           <div class="form-group">
             <label>Nominal (Rp)</label>
             <input type="number" id="amount" placeholder="Minimal 1" min="1" />
-            <div class="error-msg" id="form-error">Isi semua field dengan benar.</div>
+            <div class="error-msg" id="form-error"></div>
           </div>
           <button class="btn btn-primary" id="btn-convert" onclick="convertQris()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -425,13 +426,13 @@
               <div class="amount-value" id="display-amount">Rp 0</div>
             </div>
             <div class="result-string-box">
-              <div class="result-string-label">QRIS Dinamis</div>
-              <div class="result-string-val" id="display-qris-string">-</div>
+              <div class="result-string-label">QR URL</div>
+              <div class="result-string-val" id="display-qr-url">-</div>
             </div>
             <div class="btn-row">
               <button class="btn btn-copy" id="btn-copy" onclick="copyQris()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                Salin String
+                Salin URL
               </button>
               <button class="btn btn-success" id="btn-download" onclick="downloadQris()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -491,16 +492,27 @@
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
-    let currentQrisString = '';
-    let currentAmount = 0;
-    let decodedQrisString = '';
+    var currentQrisString = '';
+    var currentAmount = 0;
+    var decodedQrisString = '';
+
+    var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    var ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
 
     function fmt(n) {
       return 'Rp ' + parseInt(n).toLocaleString('id-ID');
     }
 
-    function qrisImageUrl(str) {
-      return 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encodeURIComponent(str);
+    function copyText(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
 
     function showScreen(id) {
@@ -513,94 +525,77 @@
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'convert') {
         document.getElementById('header-badge').textContent = 'STATIS → DINAMIS';
-        showScreen('form');
         document.getElementById('card-title').textContent = 'Konversi QRIS';
+        showScreen('form');
       } else {
         document.getElementById('header-badge').textContent = 'GAMBAR → STRING';
-        showScreen('scan');
         document.getElementById('card-title').textContent = 'Scan QRIS';
+        showScreen('scan');
       }
     }
 
-    function crc16(data) {
-      var crc = 0xFFFF;
-      for (var i = 0; i < data.length; i++) {
-        crc ^= data.charCodeAt(i) << 8;
-        for (var j = 0; j < 8; j++) {
-          if (crc & 0x8000) {
-            crc = (crc << 1) ^ 0x1021;
-          } else {
-            crc <<= 1;
-          }
-          crc &= 0xFFFF;
-        }
-      }
-      return crc.toString(16).toUpperCase().padStart(4, '0');
+    function isAllowedFile(file) {
+      if (!file) return false;
+      var ext = '.' + file.name.split('.').pop().toLowerCase();
+      return ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
     }
 
-    function buildQrisDynamic(qrisStatic, amount) {
-      var base = qrisStatic.trim().toUpperCase();
-      if (!base.startsWith('000201')) throw new Error('Format QRIS tidak dikenali!');
-      var amountNum = parseInt(String(amount).trim(), 10);
-      if (isNaN(amountNum) || amountNum < 1) throw new Error('Amount minimal 1!');
-      var a = amountNum.toString();
-      var field = '54' + String(a.length).padStart(2, '0') + a;
-      var normalized = base.replace('010211', '010212');
-      var stripped = normalized.replace(/6304.{4}$/, '');
-      var parts = stripped.split('5802ID');
-      if (parts.length < 2) throw new Error('Format QRIS tidak valid: tidak ditemukan field 5802ID.');
-      var raw = parts[0] + field + '5802ID' + parts[1] + '6304';
-      return raw + crc16(raw);
-    }
-
-    function convertQris() {
+    async function convertQris() {
       var qrisInput = document.getElementById('qris-input').value.trim();
       var amount = document.getElementById('amount').value;
       var errEl = document.getElementById('form-error');
+      var btn = document.getElementById('btn-convert');
       errEl.style.display = 'none';
       if (!qrisInput || !amount || parseInt(amount) < 1) {
         errEl.textContent = 'Isi semua field dengan benar.';
         errEl.style.display = 'block';
         return;
       }
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Memproses...';
       try {
-        var result = buildQrisDynamic(qrisInput, amount);
-        currentQrisString = result;
-        currentAmount = amount;
-        document.getElementById('display-amount').textContent = fmt(amount);
-        document.getElementById('display-qris-string').textContent = result;
-        document.getElementById('qr-img').src = qrisImageUrl(result);
+        var res = await fetch('/api/qris/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: parseInt(amount), static_qr: qrisInput }),
+        });
+        var data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Gagal generate QRIS.');
+        currentQrisString = data.qris_string;
+        currentAmount = data.amount;
+        document.getElementById('display-amount').textContent = fmt(data.amount);
+        document.getElementById('display-qr-url').textContent = data.qr_url;
+        document.getElementById('qr-img').src = data.qr_url;
         document.getElementById('card-title').textContent = 'Hasil Konversi';
         showScreen('result');
       } catch (err) {
         errEl.textContent = err.message;
         errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Konversi & Tampilkan';
       }
     }
 
-    async function copyQris() {
+    function copyQris() {
       var btn = document.getElementById('btn-copy');
-      try {
-        await navigator.clipboard.writeText(currentQrisString);
-        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
-          btn.classList.remove('copied');
-        }, 2000);
-      } catch(e) {
-        btn.textContent = 'Gagal menyalin.';
-      }
+      copyText(document.getElementById('display-qr-url').textContent);
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin URL';
+        btn.classList.remove('copied');
+      }, 2000);
     }
 
     async function downloadQris() {
-      var url = qrisImageUrl(currentQrisString);
+      var url = document.getElementById('qr-img').src;
       try {
-        var res = await fetch(url);
-        var blob = await res.blob();
+        var r = await fetch(url);
+        var blob = await r.blob();
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'qris-' + currentAmount + '.jpg';
+        a.download = 'qris-' + currentAmount + '.png';
         a.click();
         URL.revokeObjectURL(a.href);
       } catch(e) {
@@ -613,61 +608,48 @@
       document.getElementById('amount').value = '';
       document.getElementById('form-error').style.display = 'none';
       document.getElementById('qr-img').src = '';
-      document.getElementById('btn-copy').classList.remove('copied');
-      document.getElementById('btn-copy').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
+      document.getElementById('display-qr-url').textContent = '-';
+      var copyBtn = document.getElementById('btn-copy');
+      copyBtn.classList.remove('copied');
+      copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin URL';
       currentQrisString = '';
       currentAmount = 0;
       document.getElementById('card-title').textContent = 'Konversi QRIS';
       showScreen('form');
     }
 
-    var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-    var ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
-
-    function isAllowedFile(file) {
-      if (!file) return false;
-      var ext = '.' + file.name.split('.').pop().toLowerCase();
-      return ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
-    }
-
     document.getElementById('scan-file-input').addEventListener('change', function() {
       var file = this.files[0];
       var label = document.getElementById('upload-label');
+      var errEl = document.getElementById('scan-error');
+      errEl.style.display = 'none';
       if (file && !isAllowedFile(file)) {
-        showScanError('Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.');
+        errEl.textContent = 'Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.';
+        errEl.style.display = 'block';
         this.value = '';
         document.getElementById('scan-file-chosen').textContent = '';
         label.classList.remove('has-file');
         return;
       }
       document.getElementById('scan-file-chosen').textContent = file ? file.name : '';
-      document.getElementById('scan-error').style.display = 'none';
-      if (file) {
-        label.classList.add('has-file');
-      } else {
-        label.classList.remove('has-file');
-      }
+      if (file) { label.classList.add('has-file'); } else { label.classList.remove('has-file'); }
     });
-
-    function showScanError(msg) {
-      var el = document.getElementById('scan-error');
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
 
     async function scanQris() {
       var fileInput = document.getElementById('scan-file-input');
       var file = fileInput.files[0];
-      document.getElementById('scan-error').style.display = 'none';
+      var errEl = document.getElementById('scan-error');
+      errEl.style.display = 'none';
       document.getElementById('decode-result-box').classList.remove('show');
 
       if (!file) {
-        showScanError('Pilih gambar QRIS terlebih dahulu!');
+        errEl.textContent = 'Pilih gambar QRIS terlebih dahulu!';
+        errEl.style.display = 'block';
         return;
       }
-
       if (!isAllowedFile(file)) {
-        showScanError('Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.');
+        errEl.textContent = 'Format tidak didukung! Gunakan JPG, JPEG, PNG, atau WEBP.';
+        errEl.style.display = 'block';
         return;
       }
 
@@ -676,23 +658,12 @@
       btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Memproses...';
 
       try {
-        var formData = new FormData();
-        formData.append('MAX_FILE_SIZE', '1048576');
-        formData.append('file', file);
-
-        var res = await fetch('https://api.qrserver.com/v1/read-qr-code/', {
-          method: 'POST',
-          body: formData
-        });
-
+        var fd = new FormData();
+        fd.append('file', file);
+        var res = await fetch('/api/qris/decode', { method: 'POST', body: fd });
         var json = await res.json();
-        var symbol = json[0].symbol[0];
-
-        if (symbol.error) {
-          throw new Error('QR Code tidak terdeteksi. Pastikan gambar jelas dan berisi QRIS yang valid');
-        }
-
-        decodedQrisString = symbol.data;
+        if (!json.success) throw new Error(json.message);
+        decodedQrisString = json.qris_string;
 
         var reader = new FileReader();
         reader.onload = function(e) {
@@ -702,28 +673,24 @@
 
         document.getElementById('decode-qris-string').textContent = decodedQrisString;
         document.getElementById('decode-result-box').classList.add('show');
-
       } catch (err) {
-        showScanError(err.message);
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg> Scan & Decode';
       }
     }
 
-    async function copyDecoded() {
+    function copyDecoded() {
       var btn = document.getElementById('btn-copy-decode');
-      try {
-        await navigator.clipboard.writeText(decodedQrisString);
-        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
-          btn.classList.remove('copied');
-        }, 2000);
-      } catch(e) {
-        btn.textContent = 'Gagal menyalin.';
-      }
+      copyText(decodedQrisString);
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin String';
+        btn.classList.remove('copied');
+      }, 2000);
     }
 
     function pasteToConvert() {
@@ -734,7 +701,6 @@
     document.getElementById('qris-input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); convertQris(); }
     });
-    
   </script>
 </body>
 </html>
